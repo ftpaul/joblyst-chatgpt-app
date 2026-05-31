@@ -135,8 +135,9 @@ export function stripHtml(html: string): string {
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
     .replace(/\n{3,}/g, "\n\n")
     // Redact emails so ChatGPT doesn't mistake a recruiter contact for the
-    // user's identity (seen: "Your email 'inclusion@deliveryhero.com' is
-    // used for authentication" in the tool consent dialog).
+    // user's identity. (We hit this in testing: a job description's recruiter
+    // email was surfaced by ChatGPT as "Your email '<x>' is used for
+    // authentication" in the tool consent dialog.)
     .replace(EMAIL_RE, "[email removed]")
     .trim();
 }

@@ -46,12 +46,25 @@ import {
 } from "./scoring/scoring.js";
 
 const APPLY_DOMAIN_HINT = "https://joblyst.tech";
+
+// Derive the Supabase origin from the env var so the codebase stays portable
+// (anyone can fork and point at their own Supabase project without touching
+// this file). Fall back to a placeholder if unset — harmless in CSP because
+// no request will actually be made to it.
+const SUPABASE_ORIGIN = (() => {
+  try {
+    return new URL(process.env.SUPABASE_URL ?? "https://example.invalid").origin;
+  } catch {
+    return "https://example.invalid";
+  }
+})();
+
 const VIEW_CSP = {
   resourceDomains: [
     "https://fonts.googleapis.com",
     "https://fonts.gstatic.com",
     "https://cdn.brandfetch.io",
-    "https://hyilnfdqgvhydjhjqznu.supabase.co",
+    SUPABASE_ORIGIN,
   ],
 };
 
