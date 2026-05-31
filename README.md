@@ -9,15 +9,25 @@ A ChatGPT App that brings personalized Berlin tech-job matches into your convers
 
 ## What it does
 
-Three capabilities, exposed as MCP tools to ChatGPT (and any other MCP client):
+Six MCP tools — four with rich React views, two text-only. All operate on the same active Berlin / Remote-Germany job pool.
 
-| Tool | Auth | Purpose |
-|---|---|---|
-| `search_jobs` | Public | Browse active Berlin / Remote-Germany tech jobs by category, seniority, work mode, salary. Renders a card view. |
-| `get_matches` | Requires key | Personalized ranked matches scored against your Joblyst profile using the same 100-point algorithm as joblyst.tech. Renders a card view with tier badges and "why this matched" reasons. |
-| `get_profile` | Requires key | Returns your profile as structured text — useful for ChatGPT to draft cover letters or tailor CV bullets to a specific role. |
+**Public (no account required):**
 
-Each tool returns rich UI (React views rendered inline in ChatGPT) plus structured text the LLM can reason over. After picking a job, you can ask ChatGPT to draft a cover letter — the job context is already in the conversation.
+| Tool | View | Purpose | Try in chat |
+|---|---|---|---|
+| `search_jobs` | ✅ cards | Browse + filter by category, seniority, work mode, salary | *"find senior product roles in Berlin"* |
+| `recent_jobs` | ✅ cards | Jobs posted in the last N days (default 7, max 30) | *"what's new this week?"* |
+| `top_hiring_companies` | ✅ ranked list | Companies with the most open roles, optionally per category | *"who's hiring the most engineers right now?"* |
+| `language_benchmark` | text | English vs German requirement breakdown, optionally per category | *"do I need German for product roles in Berlin?"* |
+
+**Authenticated (`?key=<uuid>` appended to the MCP URL):**
+
+| Tool | View | Purpose | Try in chat |
+|---|---|---|---|
+| `get_matches` | ✅ cards | Personalized ranked matches scored with the same 100-point algorithm as joblyst.tech, with tier badges and "why this matched" reasons | *"show my matches"* |
+| `get_profile` | text | Returns your candidate profile as structured text — skills, seniority, preferences | *"draft a cover letter for #1 using my profile"* |
+
+Each view returns rich UI (React components rendered inline in ChatGPT) plus structured text the LLM can reason over. After picking a job, ask ChatGPT to draft a cover letter — the job context is already loaded in the conversation.
 
 ---
 
@@ -161,10 +171,12 @@ chatgpt-app/
 │   ├── scoring/             # Vendored canonical scoreJob (see scoring/README.md)
 │   ├── helpers.ts           # generateHelpers for typed views
 │   ├── views/
-│   │   ├── matches.tsx      # get_matches view (cards + detail + sign-up CTA)
-│   │   ├── search-jobs.tsx  # search_jobs view (cards + detail)
+│   │   ├── matches.tsx        # get_matches view (cards + detail + sign-up CTA)
+│   │   ├── search-jobs.tsx    # search_jobs view (cards + detail)
+│   │   ├── recent-jobs.tsx    # recent_jobs view (same shape, separate per Skybridge 1-view-per-tool rule)
+│   │   ├── top-companies.tsx  # top_hiring_companies view (ranked company cards)
 │   │   └── components/
-│   │       └── job-card.tsx # Shared card component (Brandfetch logo cascade)
+│   │       └── job-card.tsx   # Shared JobCard + CompanyLogo + TierBadge (Brandfetch cascade)
 │   └── index.css            # Tailwind base + Joblyst design tokens
 ├── SPEC.md                  # Discovery + architecture record
 ├── alpic.json               # Deploy config (schema reference only)

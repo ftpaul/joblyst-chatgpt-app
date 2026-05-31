@@ -104,6 +104,11 @@ Why query param? ChatGPT's MCP connector only exposes None / OAuth — there's n
 1. LLM calls `get_profile` to load the user's skills/seniority/preferences as text
 2. LLM combines profile + job data already in conversation context to draft cover letter / tailored CV bullets
 
+**Discover what's new ("what's hot in Berlin right now"):**
+1. `recent_jobs` shows the latest postings in a date-bounded card list
+2. `top_hiring_companies` ranks growing teams by open-role count, with sample titles per company
+3. `language_benchmark` quantifies the English vs German split for a category — a real concern for international job-seekers in Berlin
+
 ## Tools and Views
 
 **View: `get_matches`** — requires key
@@ -124,6 +129,23 @@ Why query param? ChatGPT's MCP connector only exposes None / OAuth — there's n
 - **Output**: `{ profile: { role_families[], primary_skills[], secondary_skills[], seniority, industries[], languages[], preferences } }` — `preferences` is an allowlisted set of known keys; the raw JSONB blob is never returned.
 - **Behavior**: returns the user's `candidate_profile` as structured text for the LLM to compose against. Read-only, no UI.
 - **Errors**: returns `{ error: "unauthorized" }` if no key, `{ error: "profile_incomplete" }` if `candidate_profile` is null.
+
+**View: `recent_jobs`** — public, no auth
+- **Input**: `{ days?: number (1–30, default 7), category?, seniority?, work_mode?, limit? }`
+- **Output**: same shape as `search_jobs` plus `appliedFilters.since_days`
+- **Subviews**: filtered card list, job detail
+- **Behavior**: filters active Berlin / Remote-Germany jobs to those with `created_at` within the last N days. Uses a dedicated `recent-jobs` view component because Skybridge enforces 1 view per tool — the rendering logic is the same as `search-jobs` but the view file is distinct.
+
+**View: `top_hiring_companies`** — public, no auth
+- **Input**: `{ category?, limit?: number (1–20, default 10) }`
+- **Output**: `{ companies: [{ name, logo_url, website_url, job_count, sample_titles[] }], category, total_jobs_considered }`
+- **Subviews**: ranked company list (no detail subview in v1)
+- **Behavior**: groups active Berlin / Remote-Germany jobs by company name, counts open roles per company, returns top N sorted desc. Includes up to 5 sample role titles per company for context.
+
+**Tool: `language_benchmark`** — public, no auth
+- **Input**: `{ category? }`
+- **Output**: `{ category, total_jobs, requires_german, english_friendly, unspecified, percentages: { requires_german, english_friendly, unspecified } }`
+- **Behavior**: counts active Berlin / Remote-Germany jobs grouped by `requires_german` (true / false / null). Text-only output — no view. Returns a one-sentence summary phrased for the LLM ("Of N jobs in <X>: Y% accept English-only, Z% require German.").
 
 **Shared `Job` shape:**
 ```ts
