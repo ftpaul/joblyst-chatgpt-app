@@ -285,12 +285,12 @@ const server = new McpServer(
         "seniority, preferences). Useful for drafting cover letters or " +
         "tailoring CV bullets to a specific role. " +
         "REQUIRES a Joblyst account — same auth as get_matches.",
-      // Empty inputSchema is required: without it, Skybridge dispatches the
-      // handler via a different path that doesn't populate extra.requestInfo,
-      // so our inline auth can't read ?key= from the URL.
+      // Skybridge only populates extra.requestInfo when inputSchema is
+      // defined. We don't actually need an argument; this optional string is
+      // a no-op placeholder so the auth path can read ?key= from the URL.
       inputSchema: {
         _: z
-          .undefined()
+          .string()
           .optional()
           .describe("Reserved — pass no arguments."),
       },
