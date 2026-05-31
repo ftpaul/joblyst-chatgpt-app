@@ -2,7 +2,7 @@ import "@/index.css";
 import { useState } from "react";
 import { useLayout } from "skybridge/web";
 import { useToolInfo } from "../helpers.js";
-import { JobCard, type JobLite } from "./components/job-card.js";
+import { CompanyLogo, JobCard, type JobLite } from "./components/job-card.js";
 
 export default function SearchJobs() {
   const { output, isPending, input } = useToolInfo<"search_jobs">();
@@ -86,13 +86,12 @@ function Detail({ job, onBack }: { job: JobLite; onBack: () => void }) {
         ← Back to results
       </button>
       <div className="flex items-start gap-3">
-        {job.company?.logo_url ? (
-          <img
-            src={job.company.logo_url}
-            alt=""
-            className="h-12 w-12 rounded-lg object-contain bg-[hsl(var(--muted))]"
-          />
-        ) : null}
+        <CompanyLogo
+          name={job.company?.name ?? "—"}
+          logoUrl={job.company?.logo_url ?? null}
+          websiteUrl={job.company?.website_url ?? null}
+          size="md"
+        />
         <div className="flex-1">
           <h2 className="text-base font-semibold leading-snug">{job.title}</h2>
           <p className="text-xs text-[hsl(var(--muted-foreground))]">

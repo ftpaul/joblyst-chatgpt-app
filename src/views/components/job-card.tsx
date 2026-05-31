@@ -112,14 +112,16 @@ function avatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
-function CompanyLogo({
+export function CompanyLogo({
   name,
   logoUrl,
   websiteUrl,
+  size = "sm",
 }: {
   name: string;
   logoUrl: string | null;
   websiteUrl: string | null;
+  size?: "sm" | "md";
 }) {
   const domain = extractDomain(websiteUrl);
   const [state, setState] = useState<"custom" | "brandfetch" | "avatar">(
@@ -127,8 +129,8 @@ function CompanyLogo({
   );
   const initials = getInitials(name);
   const color = avatarColor(name);
-  const box =
-    "mt-0.5 h-11 w-11 shrink-0 rounded-lg overflow-hidden flex items-center justify-center";
+  const dims = size === "md" ? "h-12 w-12" : "h-11 w-11";
+  const box = `mt-0.5 ${dims} shrink-0 rounded-lg overflow-hidden flex items-center justify-center`;
   // Some sources (notably Brandfetch) 200 OK with a 0×0 image when no logo
   // exists. onLoad fires but onError doesn't, so we'd otherwise show a blank
   // white square. Check natural size and cascade to the next fallback.

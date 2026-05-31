@@ -38,8 +38,15 @@ async function rest(path: string, init?: RequestInit) {
     },
   });
   if (!res.ok) {
+    // Log the full upstream error server-side for debugging, but raise a
+    // generic message so we don't leak schema/SQL details to the LLM (and
+    // through it, to the user).
     const text = await res.text();
-    throw new Error(`Supabase REST ${path} → ${res.status} ${text}`);
+    // eslint-disable-next-line no-console
+    console.error(`[supabase-rest] ${path} → ${res.status}`, text);
+    throw new Error(
+      `Joblyst API call failed (HTTP ${res.status}). Try again in a moment.`,
+    );
   }
   return res.json();
 }

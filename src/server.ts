@@ -1,7 +1,18 @@
 import { McpServer } from "skybridge/server";
 import { z } from "zod";
 import { AuthError, profileFromAuth } from "./auth.js";
-import type { ProfileRow } from "./joblyst.js";
+import {
+  fetchActiveJobs,
+  toJobLite,
+  type JobRow,
+  type ProfileRow,
+} from "./joblyst.js";
+import {
+  isBerlinJob,
+  passesHardPreferences,
+  scoreJob,
+  scoreTier,
+} from "./scoring/scoring.js";
 
 // Run profileFromAuth and convert AuthError into a clean MCP tool error.
 async function getAuthedProfile(
@@ -33,17 +44,6 @@ async function getAuthedProfile(
     throw e;
   }
 }
-import {
-  fetchActiveJobs,
-  toJobLite,
-  type JobRow,
-} from "./joblyst.js";
-import {
-  isBerlinJob,
-  passesHardPreferences,
-  scoreJob,
-  scoreTier,
-} from "./scoring/scoring.js";
 
 const APPLY_DOMAIN_HINT = "https://joblyst.tech";
 
