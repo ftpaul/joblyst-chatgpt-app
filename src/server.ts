@@ -503,9 +503,8 @@ const server = new McpServer(
         "openai/toolInvocation/invoking": "Pulling the latest postings…",
         "openai/toolInvocation/invoked": "Fresh jobs ready.",
       },
-      // Reuses the search-jobs view because the output shape matches Jobs[].
       view: {
-        component: "search-jobs",
+        component: "recent-jobs",
         domain: APPLY_DOMAIN_HINT,
         description: "Recently posted job results",
         csp: VIEW_CSP,
