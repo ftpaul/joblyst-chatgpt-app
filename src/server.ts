@@ -357,6 +357,271 @@ const server = new McpServer(
         isError: false,
       };
     },
+  )
+  .registerTool(
+    {
+      name: "top_hiring_companies",
+      description:
+        "Public — no account required. " +
+        "Find companies currently hiring the most active roles on Joblyst " +
+        "(Berlin / Remote-Germany). Useful for spotting growing teams in a " +
+        "category, identifying potential employers worth following, or " +
+        "answering 'who's hiring lots of <X> right now?'. " +
+        "Returns up to 20 companies ranked by open-role count, with sample " +
+        "role titles for each.",
+      inputSchema: {
+        category: z
+          .string()
+          .optional()
+          .describe(
+            "Filter to one category (Engineering, Product & Design, Data & AI, etc).",
+          ),
+        limit: z.number().int().min(1).max(20).optional(),
+      },
+      annotations: {
+        title: "Top hiring companies in Berlin",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "Aggregating open roles by company…",
+        "openai/toolInvocation/invoked": "Top hirers ready.",
+      },
+      view: {
+        component: "top-companies",
+        domain: APPLY_DOMAIN_HINT,
+        description: "Companies hiring the most active roles",
+        csp: VIEW_CSP,
+      },
+    },
+    async (input) => {
+      const raw = await fetchActiveJobs({
+        category: input.category,
+        limit: 300,
+      });
+      const berlinJobs = raw.filter((j) => isBerlinJob(j.location || ""));
+
+      // Group by company name (some jobs may have no company row — skip those).
+      const byCompany = new Map<
+        string,
+        {
+          name: string;
+          logo_url: string | null;
+          website_url: string | null;
+          jobs: { id: string; title: string; sub_category: string | null }[];
+        }
+      >();
+      for (const j of berlinJobs) {
+        if (!j.company?.name) continue;
+        const key = j.company.name;
+        const existing = byCompany.get(key);
+        if (existing) {
+          existing.jobs.push({
+            id: j.id,
+            title: j.title,
+            sub_category: j.ai_sub_category,
+          });
+        } else {
+          byCompany.set(key, {
+            name: j.company.name,
+            logo_url: j.company.logo_url ?? null,
+            website_url: j.company.website_url ?? null,
+            jobs: [
+              {
+                id: j.id,
+                title: j.title,
+                sub_category: j.ai_sub_category,
+              },
+            ],
+          });
+        }
+      }
+
+      const limit = Math.min(input.limit ?? 10, 20);
+      const companies = Array.from(byCompany.values())
+        .sort((a, b) => b.jobs.length - a.jobs.length)
+        .slice(0, limit)
+        .map((c) => ({
+          name: c.name,
+          logo_url: c.logo_url,
+          website_url: c.website_url,
+          job_count: c.jobs.length,
+          sample_titles: c.jobs.slice(0, 5).map((j) => j.title),
+        }));
+
+      return {
+        structuredContent: {
+          companies,
+          category: input.category ?? null,
+          total_jobs_considered: berlinJobs.length,
+        },
+        content: [
+          {
+            type: "text",
+            text:
+              companies.length === 0
+                ? "No companies match."
+                : `${companies.length} companies, ranked by active roles in Berlin/Remote-Germany${input.category ? ` (${input.category})` : ""}.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "recent_jobs",
+      description:
+        "Public — no account required. " +
+        "Jobs posted to Joblyst in the last N days (default 7, max 30). " +
+        "Use this when the user asks 'what's new this week' or wants the " +
+        "freshest Berlin / Remote-Germany roles. Filterable by category, " +
+        "seniority, and work mode. Same card view as search_jobs.",
+      inputSchema: {
+        days: z
+          .number()
+          .int()
+          .min(1)
+          .max(30)
+          .optional()
+          .describe("Look-back window in days (default 7, max 30)."),
+        category: z.string().optional(),
+        seniority: z
+          .enum(["intern", "junior", "mid", "senior", "leadership"])
+          .optional(),
+        work_mode: z.enum(["remote", "hybrid", "onsite"]).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      },
+      annotations: {
+        title: "What's new on Joblyst",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "Pulling the latest postings…",
+        "openai/toolInvocation/invoked": "Fresh jobs ready.",
+      },
+      // Reuses the search-jobs view because the output shape matches Jobs[].
+      view: {
+        component: "search-jobs",
+        domain: APPLY_DOMAIN_HINT,
+        description: "Recently posted job results",
+        csp: VIEW_CSP,
+      },
+    },
+    async (input) => {
+      const days = Math.min(input.days ?? 7, 30);
+      const limit = Math.min(input.limit ?? 20, 50);
+      const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+
+      const raw = await fetchActiveJobs({
+        category: input.category,
+        seniority: input.seniority,
+        workMode: input.work_mode,
+        limit: 300,
+      });
+      const jobs = raw
+        .filter((j) => isBerlinJob(j.location || ""))
+        .filter((j) => new Date(j.created_at).getTime() >= sinceMs)
+        .slice(0, limit)
+        .map((j) => toJobLite(j));
+
+      return {
+        structuredContent: {
+          jobs,
+          appliedFilters: {
+            query: null,
+            category: input.category ?? null,
+            seniority: input.seniority ?? null,
+            work_mode: input.work_mode ?? null,
+            salary_min: null,
+            since_days: days,
+          },
+        },
+        content: [
+          {
+            type: "text",
+            text:
+              jobs.length === 0
+                ? `No jobs in the last ${days} days for those filters.`
+                : `${jobs.length} jobs posted in the last ${days} days.`,
+          },
+        ],
+        isError: false,
+      };
+    },
+  )
+  .registerTool(
+    {
+      name: "language_benchmark",
+      description:
+        "Public — no account required. " +
+        "How many active Berlin / Remote-Germany jobs require German vs. " +
+        "accept English-only? Returns counts and percentages, optionally " +
+        "scoped to a category. Useful for answering 'do I need German for " +
+        "<role> in Berlin?'. Text-only (no view).",
+      inputSchema: {
+        category: z.string().optional(),
+      },
+      annotations: {
+        title: "English vs German job mix",
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
+      _meta: {
+        "openai/toolInvocation/invoking": "Calculating language requirements…",
+        "openai/toolInvocation/invoked": "Breakdown ready.",
+      },
+    },
+    async (input) => {
+      const raw = await fetchActiveJobs({
+        category: input.category,
+        limit: 300,
+      });
+      const jobs = raw.filter((j) => isBerlinJob(j.location || ""));
+      const total = jobs.length;
+      const requires_german = jobs.filter((j) => j.requires_german === true)
+        .length;
+      const english_friendly = jobs.filter(
+        (j) => j.requires_german === false,
+      ).length;
+      const unspecified = total - requires_german - english_friendly;
+      const pct = (n: number) =>
+        total === 0 ? 0 : Math.round((n / total) * 100);
+
+      const result = {
+        category: input.category ?? null,
+        total_jobs: total,
+        requires_german,
+        english_friendly,
+        unspecified,
+        percentages: {
+          requires_german: pct(requires_german),
+          english_friendly: pct(english_friendly),
+          unspecified: pct(unspecified),
+        },
+      };
+
+      const summary =
+        total === 0
+          ? "No active jobs found for that filter."
+          : `Of ${total} active Berlin / Remote-Germany jobs${
+              input.category ? ` in ${input.category}` : ""
+            }: ${pct(english_friendly)}% accept English-only, ${pct(
+              requires_german,
+            )}% require German${
+              unspecified > 0 ? `, ${pct(unspecified)}% unspecified` : ""
+            }.`;
+
+      return {
+        structuredContent: result,
+        content: [{ type: "text", text: summary }],
+        isError: false,
+      };
+    },
   );
 
 if (process.env.NODE_ENV === "production") {
