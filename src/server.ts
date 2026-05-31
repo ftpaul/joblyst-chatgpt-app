@@ -282,8 +282,8 @@ const server = new McpServer(
       name: "get_profile",
       description:
         "Read the authenticated user's Joblyst candidate profile (skills, " +
-        "seniority, preferences) as structured text. Useful for drafting " +
-        "cover letters or tailoring CV bullets to a specific role. " +
+        "seniority, preferences). Useful for drafting cover letters or " +
+        "tailoring CV bullets to a specific role. " +
         "REQUIRES a Joblyst account — same auth as get_matches.",
       annotations: {
         title: "Read my Joblyst profile",
@@ -294,6 +294,12 @@ const server = new McpServer(
       _meta: {
         "openai/toolInvocation/invoking": "Loading your profile…",
         "openai/toolInvocation/invoked": "Profile loaded.",
+      },
+      view: {
+        component: "profile",
+        domain: APPLY_DOMAIN_HINT,
+        description: "Profile summary",
+        csp: VIEW_CSP,
       },
     },
     async (_input, extra) => {
