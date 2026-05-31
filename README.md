@@ -25,7 +25,7 @@ Six MCP tools — four with rich React views, two text-only. All operate on the 
 | Tool | View | Purpose | Try in chat |
 |---|---|---|---|
 | `get_matches` | ✅ cards | Personalized ranked matches scored with the same 100-point algorithm as joblyst.tech, with tier badges and "why this matched" reasons | *"show my matches"* |
-| `get_profile` | text | Returns your candidate profile as structured text — skills, seniority, preferences | *"draft a cover letter for #1 using my profile"* |
+| `get_profile` | ✅ profile card | Returns your candidate profile (role families, primary/secondary skills, languages, preferences) — both as a styled view and as structured text the LLM can compose against | *"draft a cover letter for #1 using my profile"* |
 
 Each view returns rich UI (React components rendered inline in ChatGPT) plus structured text the LLM can reason over. After picking a job, ask ChatGPT to draft a cover letter — the job context is already loaded in the conversation.
 
@@ -175,6 +175,7 @@ chatgpt-app/
 │   │   ├── search-jobs.tsx    # search_jobs view (cards + detail)
 │   │   ├── recent-jobs.tsx    # recent_jobs view (same shape, separate per Skybridge 1-view-per-tool rule)
 │   │   ├── top-companies.tsx  # top_hiring_companies view (ranked company cards)
+│   │   ├── profile.tsx        # get_profile view (skills, seniority, preferences card)
 │   │   └── components/
 │   │       └── job-card.tsx   # Shared JobCard + CompanyLogo + TierBadge (Brandfetch cascade)
 │   └── index.css            # Tailwind base + Joblyst design tokens

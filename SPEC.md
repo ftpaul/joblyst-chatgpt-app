@@ -124,10 +124,11 @@ Why query param? ChatGPT's MCP connector only exposes None / OAuth — there's n
 - **Subviews**: filtered card list, job detail
 - **Behavior**: filters `is_active` + AI-processed Berlin/Remote-Germany jobs via Supabase REST. No scoring.
 
-**Tool: `get_profile`** — requires key
-- **Input**: `{}` (auth identifies user via `?key=<uuid>`)
+**View: `get_profile`** — requires key
+- **Input**: `{}` (with a single reserved `_` field — Skybridge requires a non-empty inputSchema for `extra.requestInfo` to be populated, otherwise our inline URL-based auth can't see the `?key=`).
 - **Output**: `{ profile: { role_families[], primary_skills[], secondary_skills[], seniority, industries[], languages[], preferences } }` — `preferences` is an allowlisted set of known keys; the raw JSONB blob is never returned.
-- **Behavior**: returns the user's `candidate_profile` as structured text for the LLM to compose against. Read-only, no UI.
+- **Subviews**: profile summary card with chip lists for skills / industries / languages / preferences.
+- **Behavior**: returns the user's `candidate_profile` both as a styled view (for the human) and as structured text via `content` (for the LLM to compose against — cover letters, tailored CV bullets).
 - **Errors**: returns `{ error: "unauthorized" }` if no key, `{ error: "profile_incomplete" }` if `candidate_profile` is null.
 
 **View: `recent_jobs`** — public, no auth
