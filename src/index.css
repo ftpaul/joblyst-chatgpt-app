@@ -1,0 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@alpic-ai/ui/theme";
+
+@source "../node_modules/@alpic-ai/ui/src";
+
+/* Joblyst design tokens — mirror app/globals.css so cards in ChatGPT
+   match joblyst.tech. Color values use HSL channels; consumed via
+   hsl(var(--token)) in utility classes below. */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222 46% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 46% 11%;
+  --primary: 263 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 240 7% 96%;
+  --muted-foreground: 240 3% 62%;
+  --accent: 172 66% 50%;
+  --accent-foreground: 172 66% 10%;
+  --border: 240 5% 91%;
+  --radius: 0.875rem;
+  --font-display: "Geist", system-ui, sans-serif;
+}
+
+.dark {
+  --background: 222 46% 6%;
+  --foreground: 0 0% 98%;
+  --card: 222 46% 9%;
+  --card-foreground: 0 0% 98%;
+  --primary: 263 70% 60%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 240 5% 16%;
+  --muted-foreground: 240 5% 65%;
+  --border: 240 5% 18%;
+}
+
+@theme {
+  --font-display: "Geist", system-ui, sans-serif;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-twirl: twirl 20s ease-in-out infinite;
+  --animate-aurora: aurora 20s ease-in-out infinite;
+  --animate-gradient-flow: gradient-flow 6s linear infinite;
+  --animate-ping-slow: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes aurora {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes twirl {
+  0%,
+  80% {
+    transform: rotateY(0deg);
+  }
+  85% {
+    transform: rotateY(180deg);
+  }
+  95% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
