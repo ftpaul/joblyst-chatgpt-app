@@ -123,23 +123,43 @@ export async function fetchActiveJobs(opts: {
 const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
 
 export function stripHtml(html: string): string {
-  return html
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n\n")
-    .replace(/<li>/gi, "• ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
-    .replace(/\n{3,}/g, "\n\n")
-    // Redact emails so ChatGPT doesn't mistake a recruiter contact for the
-    // user's identity. (We hit this in testing: a job description's recruiter
-    // email was surfaced by ChatGPT as "Your email '<x>' is used for
-    // authentication" in the tool consent dialog.)
-    .replace(EMAIL_RE, "[email removed]")
-    .trim();
+  return (
+    html
+      // 1) Decode HTML entities FIRST. Some upstream ATS sources double-encode
+      //    HTML — they store "<h3>" as "&lt;h3&gt;" — so we have to decode
+      //    before stripping or the tags become visible text after decode.
+      //    Order matters: decode &amp; first or nested entities break.
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, n) =>
+        String.fromCharCode(parseInt(n, 16)),
+      )
+      // 2) Convert structural tags to text formatting before stripping.
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n\n")
+      .replace(/<\/h[1-6]>/gi, "\n\n")
+      .replace(/<li[^>]*>/gi, "• ")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<\/(div|section|article|header|footer)>/gi, "\n")
+      // 3) Strip everything else.
+      .replace(/<[^>]+>/g, "")
+      // 4) Clean up whitespace.
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      // 5) Redact emails so ChatGPT doesn't mistake a recruiter contact for
+      //    the user's identity. (We hit this in testing: a job description's
+      //    recruiter email was surfaced by ChatGPT as "Your email '<x>' is
+      //    used for authentication" in the tool consent dialog.)
+      .replace(EMAIL_RE, "[email removed]")
+      .trim()
+  );
 }
 
 export function formatSalary(
